@@ -12,6 +12,8 @@ DFE of noncoding regions
 # Including SNPs only
 
 
+# SNP annotation
+
 
 # Filtering low quality SNPs
 
