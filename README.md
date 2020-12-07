@@ -97,4 +97,42 @@ bgzip ${vcf_out}
 # Filtering low quality SNPs
 
 
+# Syn and Non-synonymous SNPs
+``` bash
+#!/bin/bash
+#qsub -cwd -V -N Filtering_non_syn_SNPs -l highp,time=60:00:00,h_data=16G -t 1-22:1 -M eplau -m bea 04_SNP_annotation_syn_non.sh
+/u/local/Modules/default/init/modules.sh
+. "/u/local/apps/anaconda3/etc/profile.d/conda.sh"
+conda activate noncoding
+
+in_dir='/u/scratch/m/mica20/SNPs_only'
+out_dir_syn='/u/scratch/m/mica20/SNPs_only/Syn_snps'
+out_dir_nonsyn='/u/scratch/m/mica20/SNPs_only/Non_Syn_snps'
+
+# this is necessary to be able to connect to Host on the cluster to download the annotation database
+java -Djava.net.useSystemProxies=true ...
+
+# loop through chromosomes
+CHROM=${SGE_TASK_ID}
+OUT_PREFIX='YRI_subset_n108_SNPs'
+
+vcf_in=${in_dir}/${OUT_PREFIX}'_chr'${CHROM}'.recalibrated_variants.SNPeff.vcf' 
+
+# out vcf files
+vcf_out_syn=${out_dir_syn}/${OUT_PREFIX}'_chr'${CHROM}'.recalibrated_variants.SNPeff.Syn.vcf'
+vcf_out_nonsyn=${out_dir_nonsyn}/${OUT_PREFIX}'_chr'${CHROM}'.recalibrated_variants.SNPeff.Non.Syn.vcf'
+
+# run the code: synonymous variants
+java -Xmx8g -jar /u/home/m/mica20/project-kirk-bigdata/noncoding_project/software/snpEff/SnpSift.jar filter "ANN[0].EFFECT has 'synonymous_variant' " $vcf_in > $vcf_out_syn
+# zip the files
+bgzip ${vcf_out_syn}
+
+# run the code: nonsynonymous variants
+java -Xmx8g -jar /u/home/m/mica20/project-kirk-bigdata/noncoding_project/software/snpEff/SnpSift.jar filter "ANN[0].EFFECT has 'missense_variant' | ANN[0].EFFECT has 'stop_gained' | ANN[0].EFFECT has 'stop_lost' " $vcf_in  > $vcf_out_nonsyn
+# zip the files
+bgzip ${vcf_out_nonsyn}
+```
+
+
+
 
