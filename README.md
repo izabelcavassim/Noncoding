@@ -93,10 +93,6 @@ java -Xmx8g -jar /u/home/m/mica20/project-kirk-bigdata/noncoding_project/softwar
 # zip the files
 bgzip ${vcf_out}
 ```
-
-# Filtering low quality SNPs
-
-
 # Syn and Non-synonymous SNPs
 ``` bash
 #!/bin/bash
@@ -132,7 +128,9 @@ java -Xmx8g -jar /u/home/m/mica20/project-kirk-bigdata/noncoding_project/softwar
 # zip the files
 bgzip ${vcf_out_nonsyn}
 ```
+# Restricting to strict mask SNPs
+``` bash
 
 
-
+```
 
