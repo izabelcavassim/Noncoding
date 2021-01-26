@@ -129,9 +129,18 @@ java -Xmx8g -jar /u/home/m/mica20/project-kirk-bigdata/noncoding_project/softwar
 # zip the files
 bgzip ${vcf_out_nonsyn}
 ```
-# Restricting to strict mask SNPs
+# Finding coding regions
 ``` bash
+### Finding protein coding regions of Hg38
 
-
+wget -O - "http://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_36/gencode.v36.annotation.gtf.gz" |\
+gunzip -c | grep 'transcript_type "protein_coding"' |\
+awk '($3=="exon") {printf("%s\t%s\t%s\n",$1,int($4)-1,$5);}' |\
+sort -T . -k1,1 -k2,2n | bedtools merge > coding_region_hg38_gencode_v36_version_2.bed
+```
+# Restricting HMM state regions to noncoding regions
+As explained [here](https://bedtools.readthedocs.io/en/latest/content/tools/subtract.html), one can use bedtools for that.
+``` bash
+for i in *states_hg38.bed; do bedtools subtract -a $i -b coding_region_hg38_gencode_v36_version_2.bed > subset_only_noncoding_$i; done
 ```
 
