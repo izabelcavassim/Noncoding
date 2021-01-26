@@ -6,7 +6,7 @@ DFE of noncoding regions
 30X 1000 genomes
 
 
-# Pruning YRU population (01_subsampling_new.sh)
+# Subsetting only YRU population (01_subsampling_submission_new.sh)
 ```bash
 #!/bin/bash
 for i in /u/project/klohmuel/DataRepository/Human/Variants/VCF/*.vcf.gz; do 
@@ -17,6 +17,7 @@ for i in /u/project/klohmuel/DataRepository/Human/Variants/VCF/*.vcf.gz; do
 	qsub -v i=$i -v filename2=$filename2 01_subsampling_submission_new.sh; 
 done 
 ```
+01_subsampling_submission_new.sh: 
 ``` bash
 #!/bin/bash
 #$ -l h_rt=23:59:59,h_data=16G
