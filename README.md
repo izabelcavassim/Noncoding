@@ -145,3 +145,12 @@ As explained [here](https://bedtools.readthedocs.io/en/latest/content/tools/subt
 for i in *states_hg38.bed; do bedtools subtract -a $i -b coding_region_hg38_gencode_v36_version_2.bed > subset_only_noncoding_$i; done
 ```
 
+# Sorting HMM state regions
+``` bash
+for i in subset_noncoding*; do sort -k1,1 -k2,2n $i > sorted_$i; done
+``` 
+
+# Finding the closest quiescent position to the other HMM state
+``` bash
+for i in sorted*; do closestBed -a $i -b sorted_subset_noncoding_only_quescient_states_hg38.bed > closest_quescient_states_$i; done
+```
