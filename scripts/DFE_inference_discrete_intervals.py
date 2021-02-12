@@ -1,6 +1,6 @@
 
 """
-Uses dadi and fitdadi to infer the DFE of a given synonynmous sfs.
+Uses dadi to infer the demographic historic using syn-SFS and fitdadi to infer the DFE of a nonsynonymous sfs.
 
 JCM 201907011
 """
@@ -34,15 +34,14 @@ def gamma_dist(mgamma, alpha, beta):
 	return scipy.stats.distributions.gamma.pdf(-mgamma, alpha, scale=beta)	
 
 #the demography + selection function. single size change and selection.
-def two_epoch_sel(params, ns, pts):
+def two_epoch_sel(params, ns, pts, h):
     nu, T, gamma = params
     xx = dadi.Numerics.default_grid(pts)
-    phi = dadi.PhiManip.phi_1D(xx, gamma=gamma)
+    phi = dadi.PhiManip.phi_1D(xx, gamma=gamma, h=h)
     phi = dadi.Integration.one_pop(phi, xx, T, nu, gamma=gamma)
     fs = dadi.Spectrum.from_phi(phi, ns, (xx,))
     return fs
 
-#another possible characterization of the neutral+gamma
 def neugamma(mgamma, pneu, pgamma, alpha, beta):
     mgamma=-mgamma
     #assume anything with gamma<1e-4 is neutral
@@ -65,27 +64,30 @@ def discretegamma(mgamma, p1, p2, p3, p4, p5, alpha, beta):
 	mgamma = -mgamma
 	# Assume anything with gamma < 1e-4 is bin 1
 	if (0 <= mgamma) and (mgamma < 1e-5):
-		bin1 =  p1 * Selection.gamma_dist(-mgamma, alpha, beta)
+		bin1 = (1e-5 - 0)/p1
 		return(bin1)
 
 	# Assume anything with gamma [1e-5, < 1e-4) is bin 2
 	if (1e-5 <= mgamma) and (mgamma < 1e-4):
-		bin2 = p2*Selection.gamma_dist(-mgamma, alpha, beta)
+		bin2 = (1e-4 - 1e-5)/p2
 		return(bin2)
 
 	# Assume anything with gamma [1e-4, < 1e-3) is bin 3
 	if (1e-4 <= mgamma) and (mgamma < 1e-3):
-		bin3 = p3*Selection.gamma_dist(-mgamma, alpha, beta)
+		bin3 = (1e-3 - 1e-4)/p3
 		return(bin3)
 
 		# Assume anything with gamma [1e-3, < 1e-2) is bin 4
 	if (1e-3 <= mgamma) and (mgamma < 1e-2):
-		bin4 = p4*Selection.gamma_dist(-mgamma, alpha, beta)
+		bin4 = (1e-2 - 1e-3)/p4
 		return(bin4)
 
-	if (mgamma >= 1e-2):
-		bin5 = p5*Selection.gamma_dist(-mgamma, alpha, beta)
+	if (1e-2 <= mgamma) and (mgamma < 1):
+		bin5 = (1-1e-2)/p5
 		return(bin5)
+
+	if (mgamma > 1):
+		return(0)
 	#else:
 	#	bin5 = Selection.gamma_dist(-mgamma, alpha, beta) * (1 -(p1+p2+p3+p4))
 
@@ -102,12 +104,11 @@ ns = numpy.array([250])
 
 #integrate over a range of gammas and set breaks
 pts_l = [600, 800, 1000]
-int_breaks = [1e-4, 0.1, 1, 100, 500]
-## Is it here supposed to be the changes of the breaks ??????????????
-#int_breaks = [0, 1e-5, 1e-4, 1e-3, 1e-2, 1, 100, 500]
+# -1e-9 is just adding tiny values so it is not exactly in the border of the break.
+int_breaks = [0, 0.00001-1e-9, 0.0001-1e-9, 0.001-1e-9, 0.01-1e-9, 1-1e-9]
 spectra = Selection.spectra(demog_params, ns, two_epoch_sel, pts_l=pts_l,
                             int_breaks=int_breaks, Npts=300,
-                            echo=True, mp=True)
+                            echo=True, mp=True, h=0.5)
 
 #load sample data
 data = dadi.Spectrum.from_file('example.sfs')
