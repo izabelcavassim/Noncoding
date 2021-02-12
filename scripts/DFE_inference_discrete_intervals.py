@@ -1,6 +1,6 @@
 
 """
-Uses dadi to infer the demographic historic using syn-SFS and fitdadi to infer the DFE of a nonsynonymous sfs.
+Uses dadi to infer the demographic histoy using syn-SFS and fitdadi to infer the DFE of a nonsynonymous sfs.
 
 JCM 201907011
 """
@@ -34,7 +34,7 @@ def gamma_dist(mgamma, alpha, beta):
 	return scipy.stats.distributions.gamma.pdf(-mgamma, alpha, scale=beta)	
 
 #the demography + selection function. single size change and selection.
-def two_epoch_sel(params, ns, pts, h):
+def two_epoch_sel(params, ns, pts, h=0.5):
     nu, T, gamma = params
     xx = dadi.Numerics.default_grid(pts)
     phi = dadi.PhiManip.phi_1D(xx, gamma=gamma, h=h)
@@ -65,25 +65,30 @@ def discretegamma(mgamma, p1, p2, p3, p4, p5, alpha, beta):
 	# Assume anything with gamma < 1e-4 is bin 1
 	if (0 <= mgamma) and (mgamma < 1e-5):
 		bin1 = (1e-5 - 0)/p1
+		#bin1 =  p1 * Selection.gamma_dist(-mgamma, alpha, beta)
 		return(bin1)
 
 	# Assume anything with gamma [1e-5, < 1e-4) is bin 2
 	if (1e-5 <= mgamma) and (mgamma < 1e-4):
 		bin2 = (1e-4 - 1e-5)/p2
+		#bin2 =  p2 * Selection.gamma_dist(-mgamma, alpha, beta)
 		return(bin2)
 
 	# Assume anything with gamma [1e-4, < 1e-3) is bin 3
 	if (1e-4 <= mgamma) and (mgamma < 1e-3):
 		bin3 = (1e-3 - 1e-4)/p3
+		#bin3 =  p3 * Selection.gamma_dist(-mgamma, alpha, beta)
 		return(bin3)
 
 		# Assume anything with gamma [1e-3, < 1e-2) is bin 4
 	if (1e-3 <= mgamma) and (mgamma < 1e-2):
 		bin4 = (1e-2 - 1e-3)/p4
+		#bin4 =  p4 * Selection.gamma_dist(-mgamma, alpha, beta)
 		return(bin4)
 
 	if (1e-2 <= mgamma) and (mgamma < 1):
 		bin5 = (1-1e-2)/p5
+		#bin5 =  p5 * Selection.gamma_dist(-mgamma, alpha, beta)
 		return(bin5)
 
 	if (mgamma > 1):
@@ -105,10 +110,13 @@ ns = numpy.array([250])
 #integrate over a range of gammas and set breaks
 pts_l = [600, 800, 1000]
 # -1e-9 is just adding tiny values so it is not exactly in the border of the break.
-int_breaks = [0, 0.00001-1e-9, 0.0001-1e-9, 0.001-1e-9, 0.01-1e-9, 1-1e-9]
+#int_breaks = [0, 0.00001-1e-9, 0.0001-1e-9, 0.001-1e-9, 0.01-1e-9, 1-1e-9
+#int_breaks = [1e-5, 0.00001, 0.0001, 0.001, 0.01, 1, 500]
+int_breaks = [1e-5-1e-9, 1e-4-1e-9, 1e-3-1e-9, 1e-2-1e-9, 0.1-1e-9]
+#int_breaks = [1e-5, 1e-4, 1e-3, 1e-2, 0.1]
 spectra = Selection.spectra(demog_params, ns, two_epoch_sel, pts_l=pts_l,
                             int_breaks=int_breaks, Npts=300,
-                            echo=True, mp=True, h=0.5)
+                            echo=True, mp=True)
 
 #load sample data
 data = dadi.Spectrum.from_file('example.sfs')
@@ -118,8 +126,10 @@ data = dadi.Spectrum.from_file('example.sfs')
 ########################################################
 neugamma_vec = numpy.frompyfunc(discretegamma, 8, 1)
 
+print(neugamma_vec)
 
-sel_params = [0, 1e-5, 1e-4, 1e-3, 1e-2, 0.2, 1000.] #bin1, # bin2, #bin3, #bin4, #bin5, #alpha, #beta
+
+sel_params = [1e-5-1e-9, 1e-4-1e-9, 1e-3-1e-9, 1e-2-1e-9, 0.1, 0.2, 1000.] #bin1, # bin2, #bin3, #bin4, #bin5, #alpha, #beta
 lower_bound = [1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-2] #bin1, # bin2, #bin3, #bin4, #bin5, #alpha, #beta
 upper_bound = [1, 1, 1, 1, 1, 1, 50000.]
 
@@ -130,3 +140,4 @@ popt = Selection.optimize_cons(p0, data, spectra.integrate, neugamma_vec,
                                theta_ns, lower_bound=lower_bound, 
                                upper_bound=upper_bound, verbose=len(sel_params), 
                                maxiter=100, constraint=consfunc)
+print(popt)
