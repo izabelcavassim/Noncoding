@@ -112,8 +112,8 @@ ns = numpy.array([250])
 
 pts_l = [600, 800, 1000]
 # -1e-9 is just adding tiny values so it is not exactly in the border of the break.
-e=-0.0001
-int_breaks = [1e-4, 0.1-e, 1-e, 10-e, 100-e, 500-e]
+tiny_e=-0.0001
+int_breaks = [1e-4, 0.1-tiny_e, 1-tiny_e, 10-tiny_e, 100-tiny_e, 500-tiny_e]
 
 spectra = Selection.spectra(demog_params, ns, two_epoch_sel, pts_l=pts_l,
 							int_breaks=int_breaks, Npts=300,
