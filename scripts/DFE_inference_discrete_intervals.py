@@ -1,7 +1,7 @@
 
 """
-Uses dadi to infer the demographic histoy using syn-SFS and fitdadi to infer the DFE of a nonsynonymous sfs.
-For now trying to use the example data to comoute the SFS.
+Uses dadi to infer the demographic history using syn-SFS and fitdadi to infer the DFE of a nonsynonymous sfs.
+For now trying to use the example data to compute the SFS. Later we will test different h coefficients
 
 JCM 201907011
 
@@ -56,13 +56,30 @@ def two_epoch_sel(params, ns, pts, h=0.5):
 	fs = dadi.Spectrum.from_phi(phi, ns, (xx,))
 	return fs
 
-def neugamma(mgamma, pneu, pgamma, alpha, beta):
+def discrete_not_complementary(mgamma, p1, p2, p3, p4, alpha, beta, two_Nanc):
 	mgamma=-mgamma
 	#assume anything with gamma<1e-4 is neutral
-	if (0 <= mgamma) and (mgamma < 1e-4):
-		return pneu/(1e-4) + pgamma*Selection.gamma_dist(-mgamma, alpha, beta)
+	# Assuming anything with s = 1e-5 is bin 1 2Ns = (10000*1e-5)
+	if (two_Nanc*0 <= mgamma) and (mgamma < two_Nanc*1e-5):
+		bin1 = p1/(0.1 - 0)
+		return(bin1)
+
+	# Assume anything with s => 1e-5 and s < 1e-4 is bin 2 (2Ns = 0.1 - 1)
+	if (two_Nanc*1e-5 <= mgamma) and (mgamma < two_Nanc*1e-4):
+		bin2 = p2/(1 - 0.1)
+		return(bin2)
+
+	# Assume anything with s [1e-4, < 1e-3) is bin 3 (2Ns = 1 - 10)
+	if (two_Nanc*1e-4 <= mgamma) and (mgamma < two_Nanc*1e-3):
+		bin3 = p3/(10 - 1)
+		return(bin3)
+
+	# Assume anything with s [1e-3, < 1e-2) is bin 4 (2Ns = 10 - 100)
+	if (two_Nanc*1e-3 <= mgamma) and (mgamma < two_Nanc*1e-2):
+		bin4 = p4/(100 - 10)
+		return(bin4)
 	else:
-		return Selection.gamma_dist(-mgamma, alpha, beta) * pgamma
+		return (1-(p1+p2+p3+p4))/(100-1000)
 
 def discretedfe(mgamma, p1, p2, p3, p4, alpha, beta):
 	"""Define a discrete uniform distribution with 5 discrete bins, in which p_i (i:1-5) are the variables for each selection coefficient bin.
@@ -76,22 +93,22 @@ def discretedfe(mgamma, p1, p2, p3, p4, alpha, beta):
 	mgamma = -mgamma
 	# Assuming anything with s = 1e-5 is bin 1 2Ns = (10000*1e-5)
 	if (0 <= mgamma) and (mgamma < 0.1):
-		bin1 = (0.1 - 0)/p1
+		bin1 = p1/(0.1 - 0)
 		return(bin1)
 
 	# Assume anything with s => 1e-5 and s < 1e-4 is bin 2 (2Ns = 0.1 - 1)
 	if (0.1 <= mgamma) and (mgamma < 1):
-		bin2 = (1 - 0.1)/p2
+		bin2 = p2/(1 - 0.1)
 		return(bin2)
 
 	# Assume anything with s [1e-4, < 1e-3) is bin 3 (2Ns = 1 - 10)
 	if (1 <= mgamma) and (mgamma < 10):
-		bin3 = (10 - 1)/p3
+		bin3 = p3/(10 - 1)
 		return(bin3)
 
 	# Assume anything with s [1e-3, < 1e-2) is bin 4 (2Ns = 10 - 100)
 	if (10 <= mgamma) and (mgamma < 100):
-		bin4 = (100 - 10)/p4
+		bin4 = p4/(100 - 10)
 		return(bin4)
 
 	if (mgamma > 100):
@@ -105,18 +122,22 @@ def consfunc(x, *args):
 demog_params = [2, 0.05]
 theta_ns = 4000.
 ns = numpy.array([250])
+print(ns)
 
 ########################################################
 # Integrating over a range of gammas and set breaks
 ########################################################
 
 pts_l = [600, 800, 1000]
+# Npts log-spaced points
 # -1e-9 is just adding tiny values so it is not exactly in the border of the break.
-tiny_e=-0.0001
-int_breaks = [1e-4, 0.1-tiny_e, 1-tiny_e, 10-tiny_e, 100-tiny_e, 500-tiny_e]
+tiny_e=-0.000000000001
+
+# over pre-determined breaks
+int_breaks = [1e-10, 0.1-tiny_e, 1-tiny_e, 10-tiny_e, 100-tiny_e, 1000-tiny_e]
 
 spectra = Selection.spectra(demog_params, ns, two_epoch_sel, pts_l=pts_l,
-							int_breaks=int_breaks, Npts=300,
+							int_breaks=int_breaks, Npts=200,
 							echo=True, mp=True)
 
 ########################################################
@@ -133,6 +154,7 @@ data = dadi.Spectrum.from_file('example.sfs')
 
 # Vectorizing the DFE
 discrete_vec = numpy.frompyfunc(discretedfe, 7, 1)
+dicrete_vec = numpy.frompyfunc(discrete_not_complementary, 7, 1)
 
 print(discrete_vec)
 
@@ -140,18 +162,23 @@ print(discrete_vec)
 # Selection parameters in terms of 2Nanc*s
 #sel_params = [1e-5, 1e-4, 1e-3, 1e-2, 1, 0.2, 1000.] #bin1, # bin2, #bin3, #bin4, #bin5, #alpha, #beta
 sel_params = [0.1, 1, 10, 100, 0.2, 1000.] #bin1, # bin2, #bin3, #bin4 #alpha, #beta
-lower_bound = [1e-3, 1e-3, 1e-3, 1e-3, 1e-3, 1e-2] #bin1, # bin2, #bin3, #bin4, #bin5, #alpha, #beta
+lower_bound = [1e-2, 1e-2, 1e-2, 1e-2, 1e-2, 1e-2] #bin1, # bin2, #bin3, #bin4, #bin5, #alpha, #beta
 upper_bound = [1, 1, 1, 1, 1, 50000.]
 
 discrete_max_likelihoods = []
 discrete_guesses = dict()
-for i in range(5):
+for i in range(25):
 	p0 = dadi.Misc.perturb_params(sel_params, lower_bound=lower_bound, upper_bound=upper_bound)
 	print("Beginning optimization with guess, {0}.".format(p0))
-	popt = Selection.optimize_cons(p0, data, spectra.integrate, discrete_vec, 
+	#popt = Selection.optimize_cons(p0, data, spectra.integrate, discrete_vec, 
+	#							   theta_ns, lower_bound=lower_bound, 
+	#							   upper_bound=upper_bound, verbose=len(sel_params), 
+	#							   maxiter=100, constraint=consfunc)
+
+	popt = Selection.optimize_log(p0, data, spectra.integrate, discrete_vec, 
 								   theta_ns, lower_bound=lower_bound, 
 								   upper_bound=upper_bound, verbose=len(sel_params), 
-								   maxiter=50, constraint=consfunc)
+								   maxiter=50)
 	
 	discrete_max_likelihoods.append(popt[0])
 	discrete_guesses[popt[0]] = popt
