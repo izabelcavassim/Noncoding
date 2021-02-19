@@ -56,27 +56,29 @@ def two_epoch_sel(params, ns, pts, h=0.5):
 	fs = dadi.Spectrum.from_phi(phi, ns, (xx,))
 	return fs
 
-def discrete_not_complementary(mgamma, p1, p2, p3, p4, alpha, beta, two_Nanc):
+def discrete_not_complementary(mgamma, p1, p2, p3, p4, alpha, beta):
+
+	two_Nanc=100000
 	mgamma=-mgamma
 	#assume anything with gamma<1e-4 is neutral
 	# Assuming anything with s = 1e-5 is bin 1 2Ns = (10000*1e-5)
 	if (two_Nanc*0 <= mgamma) and (mgamma < two_Nanc*1e-5):
-		bin1 = p1/(0.1 - 0)
+		bin1 = p1/(two_Nanc*1e-5 - two_Nanc*0)
 		return(bin1)
 
 	# Assume anything with s => 1e-5 and s < 1e-4 is bin 2 (2Ns = 0.1 - 1)
 	if (two_Nanc*1e-5 <= mgamma) and (mgamma < two_Nanc*1e-4):
-		bin2 = p2/(1 - 0.1)
+		bin2 = p2/(two_Nanc*1e-4 - two_Nanc*1e-5)
 		return(bin2)
 
 	# Assume anything with s [1e-4, < 1e-3) is bin 3 (2Ns = 1 - 10)
 	if (two_Nanc*1e-4 <= mgamma) and (mgamma < two_Nanc*1e-3):
-		bin3 = p3/(10 - 1)
+		bin3 = p3/(two_Nanc*1e-3 - two_Nanc*1e-4)
 		return(bin3)
 
 	# Assume anything with s [1e-3, < 1e-2) is bin 4 (2Ns = 10 - 100)
 	if (two_Nanc*1e-3 <= mgamma) and (mgamma < two_Nanc*1e-2):
-		bin4 = p4/(100 - 10)
+		bin4 = p4/(two_Nanc*1e-2 - two_Nanc*1e-3)
 		return(bin4)
 	else:
 		return (1-(p1+p2+p3+p4))/(100-1000)
@@ -91,32 +93,37 @@ def discretedfe(mgamma, p1, p2, p3, p4, alpha, beta):
 	# bins are discretized by scaling s coefficients to 2N_anc*s (ancestral 2N is 100000)
 	"""
 	mgamma = -mgamma
+	two_Nanc = 10000
 	# Assuming anything with s = 1e-5 is bin 1 2Ns = (10000*1e-5)
-	if (0 <= mgamma) and (mgamma < 0.1):
-		bin1 = p1/(0.1 - 0)
+	if (two_Nanc*0 <= mgamma) and (mgamma < two_Nanc*1e-5):
+		bin1 = p1/(two_Nanc*1e-5 - two_Nanc*0)
 		return(bin1)
 
 	# Assume anything with s => 1e-5 and s < 1e-4 is bin 2 (2Ns = 0.1 - 1)
-	if (0.1 <= mgamma) and (mgamma < 1):
-		bin2 = p2/(1 - 0.1)
+	if (two_Nanc*1e-5 <= mgamma) and (mgamma < two_Nanc*1e-4):
+		bin2 = p2/(two_Nanc*1e-4 - two_Nanc*1e-5)
 		return(bin2)
 
 	# Assume anything with s [1e-4, < 1e-3) is bin 3 (2Ns = 1 - 10)
-	if (1 <= mgamma) and (mgamma < 10):
-		bin3 = p3/(10 - 1)
+	if (two_Nanc*1e-4 <= mgamma) and (mgamma < two_Nanc*1e-3):
+		bin3 = p3/(two_Nanc*1e-3 - two_Nanc*1e-4)
 		return(bin3)
 
 	# Assume anything with s [1e-3, < 1e-2) is bin 4 (2Ns = 10 - 100)
-	if (10 <= mgamma) and (mgamma < 100):
-		bin4 = p4/(100 - 10)
+	if (two_Nanc*1e-3 <= mgamma) and (mgamma < two_Nanc*1e-2):
+		bin4 = p4/(two_Nanc*1e-2 - two_Nanc*1e-3)
 		return(bin4)
 
-	if (mgamma > 100):
+	if (two_Nanc*1e-2 <= mgamma) and (mgamma < two_Nanc*1e-1):
+		bin5 = p5/(two_Nanc*1e-1 - two_Nanc*1e-2)
 		return(0)
 
 # define a constraint function. At MLE, consfunc = 0, for which all the 4 discrete parameters should sum up to 1
 def consfunc(x, *args):
 	return 1-sum(x[0:-2])
+
+
+def integrating_over_gammas(demog_params, ns, two_epoch_sel, pts_l, ):
 
 #set demographic parameters and theta. this is usually inferred from the synonymous sites, we will do it when not using simulated data
 demog_params = [2, 0.05]
@@ -154,7 +161,6 @@ data = dadi.Spectrum.from_file('example.sfs')
 
 # Vectorizing the DFE
 discrete_vec = numpy.frompyfunc(discretedfe, 7, 1)
-dicrete_vec = numpy.frompyfunc(discrete_not_complementary, 7, 1)
 
 print(discrete_vec)
 
@@ -197,4 +203,36 @@ for i in range(len(discrete_guesses.keys())):
 
 # Writing results as csvs:
 df_discrete = pd.DataFrame(results_discrete, columns =['Likelihood', 'bin1', 'bin2', 'bin3', 'bin4', 'alpha', 'beta'], dtype = float) 
+df_discrete.to_csv('DFE_inference_discrete_{h}_.csv'.format(h=h_coefficient), index=False)
+
+########################################################
+# Fitting a discrete DFE to the data with a grid search
+########################################################
+
+dicrete_vec_ = numpy.frompyfunc(discrete_not_complementary, 8, 1)
+
+for i in range(25):
+	p0 = dadi.Misc.perturb_params(sel_params, lower_bound=lower_bound, upper_bound=upper_bound)
+	print("Beginning optimization with guess, {0}.".format(p0))
+	popt = Selection.optimize_cons(p0, data, spectra.integrate, discrete_vec, 
+								   theta_ns, lower_bound=lower_bound, 
+								   upper_bound=upper_bound, verbose=len(sel_params), 
+								   maxiter=100, constraint=consfunc)
+	discrete_max_likelihoods.append(popt[0])
+	discrete_guesses[popt[0]] = popt
+
+discrete_max_likelihoods.sort()
+
+########################################################
+# Outputting guesses 
+########################################################
+
+results_discrete = []
+print(discrete_guesses.keys())
+for i in range(len(discrete_guesses.keys())):
+	best_popt_discrete = discrete_guesses[discrete_max_likelihoods[i]]
+	results_discrete.append([best_popt_discrete[0], best_popt_discrete[1][0], best_popt_discrete[1][1], best_popt_discrete[1][2], best_popt_discrete[1][3],  best_popt_discrete[1][4],  best_popt_discrete[1][5]])
+
+# Writing results as csvs:
+df_discrete = pd.DataFrame(results_discrete, columns =['Likelihood', 'bin1', 'bin2', 'bin3', 'bin4', 'bin5', 'alpha', 'beta'], dtype = float) 
 df_discrete.to_csv('DFE_inference_discrete_{h}_.csv'.format(h=h_coefficient), index=False)
