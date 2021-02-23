@@ -157,7 +157,7 @@ for i in sorted*; do closestBed -a $i -b sorted_subset_noncoding_only_quescient_
 
 # Mutation rate
 ``` bash
-# Downloading the bigbed files from:
+# Downloading the bigWig files from:
 # http://mutation.sph.umich.edu/hg19/
 # All contexts: AT_CG.bw, AT_GC.bw, AT_TA.bw, GC_AT.bw, GC_CG.bw, and GC_TA.bw
 
