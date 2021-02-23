@@ -154,3 +154,16 @@ for i in subset_noncoding*; do sort -k1,1 -k2,2n $i > sorted_$i; done
 ``` bash
 for i in sorted*; do closestBed -a $i -b sorted_subset_noncoding_only_quescient_states_hg38.bed > closest_quescient_states_$i; done
 ```
+
+# Mutation rate
+``` bash
+# Downloading the bigbed files from:
+# http://mutation.sph.umich.edu/hg19/
+# All contexts: AT_CG.bw, AT_GC.bw, AT_TA.bw, GC_AT.bw, GC_CG.bw, and GC_TA.bw
+
+Convert bigWig to WIG via bigWigToWig:
+for i in *.bw; do bigWigToWig $i $i.wig; done
+
+Convert WIG to BED via BEDOPS wig2bed:
+for i in *.wig; do wig2bed < $i > $i.bed; done
+``` 
