@@ -29,7 +29,7 @@ import pandas as pd
 # dadi characterizes genotype fitnesses as:
 # 1, 1 + 2sh, and 1+2s, where 1+2sh
 h_coefficient = sys.argv[1]
-times = 25 # iteractions across the different DFE models 
+times = 5 # iteractions across the different DFE models 
 print("Using the dominance coefficient equal to")
 print(h_coefficient)
 
@@ -89,6 +89,31 @@ def discrete_not_complementary(mgamma, p1, p2, p3, p4): #, alpha, beta
 	else:
 		return (1-(p1+p2+p3+p4))/(100-1000)
 
+
+def discrete_not_complementary(mgamma, a1, a2, a3, a4):
+    #made this range overlap with int_breaks for convenience
+    Nanc=10000.
+    x0 = 0. * 2 * Nanc
+    x1 = 1e-5 * 2 * Nanc
+    x2 = 1e-4 * 2 * Nanc
+    x3 = 1e-3 * 2 * Nanc
+    x4 = 1e-2 * 2 * Nanc
+    x5 = 1 * 2 * Nanc
+    a5 = 1. - a1 - a2 - a3 - a4
+    mgamma = -mgamma
+    if (mgamma >= x0) and (mgamma <= x1):
+        return (a1/(x1-x0))
+    elif (mgamma > x1) and (mgamma <= x2):
+        return (a2/(x2-x1))
+    elif (mgamma > x2) and (mgamma <= x3):
+        return (a3/(x3-x2))
+    elif (mgamma > x3) and (mgamma <= x4):
+        return (a4/(x4-x3))
+    elif (mgamma > x4) and (mgamma <= x5):
+        return (a5/(x5-x4))
+    else:
+        return 0
+
 def discretedfe(mgamma, p1, p2, p3, p4, p5): #, alpha, beta
 	"""Define a discrete uniform distribution with 5 discrete bins, in which p_i (i:1-5) are the variables for each selection coefficient bin.
 
@@ -99,26 +124,26 @@ def discretedfe(mgamma, p1, p2, p3, p4, p5): #, alpha, beta
 	two_Nanc=10000
 	# Assuming anything with s = 1e-5 is bin 1 2Ns = (10000*1e-5)
 	if (two_Nanc*0 <= mgamma) and (mgamma < two_Nanc*1e-5):
-		bin1 = p1/(0.1 - 0)
+		bin1 = p1/(two_Nanc*1e-5 - 0)
 		return(bin1)
 
 	# Assume anything with s => 1e-5 and s < 1e-4 is bin 2 (2Ns = 0.1 - 1)
 	if (two_Nanc*1e-5 <= mgamma) and (mgamma < two_Nanc*1e-4):
-		bin2 = p2/(1 - 0.1)
+		bin2 = p2/(two_Nanc*1e-4 - two_Nanc*1e-5)
 		return(bin2)
 
 	# Assume anything with s [1e-4, < 1e-3) is bin 3 (2Ns = 1 - 10)
 	if (two_Nanc*1e-4 <= mgamma) and (mgamma < two_Nanc*1e-3):
-		bin3 = p3/(10 - 1)
+		bin3 = p3/(two_Nanc*1e-3 - two_Nanc*1e-4)
 		return(bin3)
 
 	# Assume anything with s [1e-3, < 1e-2) is bin 4 (2Ns = 10 - 100)
 	if (two_Nanc*1e-3 <= mgamma) and (mgamma < two_Nanc*1e-2):
-		bin4 = p4/(100 - 10)
+		bin4 = p4/(two_Nanc*1e-2 - two_Nanc*1e-3)
 		return(bin4)
 
 	if (two_Nanc*1e-2 <= mgamma) and (mgamma < two_Nanc*1e-1):
-		bin5 = p5/(100 - 10)
+		bin5 = p5/(two_Nanc*1e-1 - two_Nanc*1e-2)
 		return(bin5)
 
 	if (mgamma > 100):
