@@ -155,6 +155,11 @@ for i in subset_noncoding*; do sort -k1,1 -k2,2n $i > sorted_$i; done
 for i in sorted*; do closestBed -a $i -b sorted_subset_noncoding_only_quescient_states_hg38.bed > closest_quescient_states_$i; done
 ```
 
+# Filtering out duplicated positions
+``` bash
+for i in closest_quescient_states_*; do sort -k1,1 -k2,2n -k3,3n -u $i > unique_$i; done
+```
+
 # Mutation rate
 ``` python
 # Extracted denovo mutations from Sasani et al 2019, and overlapped their denovo mutations to the specific hidden state regions
