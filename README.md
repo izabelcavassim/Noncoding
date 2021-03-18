@@ -156,14 +156,36 @@ for i in sorted*; do closestBed -a $i -b sorted_subset_noncoding_only_quescient_
 ```
 
 # Mutation rate
-``` bash
-# Downloading the bigWig files from:
-# http://mutation.sph.umich.edu/hg19/
-# All contexts: AT_CG.bw, AT_GC.bw, AT_TA.bw, GC_AT.bw, GC_CG.bw, and GC_TA.bw
+``` python
+# Extracted denovo mutations from Sasani et al 2019, and overlapped their denovo mutations to the specific hidden state regions
 
-Convert bigWig to WIG via bigWigToWig:
-for i in *.bw; do bigWigToWig $i $i.wig; done
+def computing_number_of_shared_mutations(mutations_df, hidden_states_coords_df, middle_distance_threshold, k, signatures_file, name_hidden_state):
+    """
 
-Convert WIG to BED via BEDOPS wig2bed:
-for i in *.wig; do wig2bed < $i > $i.bed; done
+
+    Args:
+
+    Returns:
+        :class:`~pandas.DataFrame`. Table with the relative position (to the exon center)
+        the number of mutations observed and expected in that position.
+
+    """
+    
+    # Convert mutations into bed to intersect values
+    mutations_bed = pybedtools.BedTool.from_dataframe(mutations_df)
+    
+    # Convert the hidden states into bed a bed file
+    hidden_states_coords_bed = pybedtools.BedTool.from_dataframe(hidden_states_coords_df)
+    
+    # Filter mutations by the full region of interest
+    my_bed = hidden_states_coords_bed.intersect(mutations_bed, wao=True, output='intersection_of_a_and_b.bed')
+    
+    mutations_in_range = pd.read_table(my_bed.fn, names = ['chrm_hs','start_hs', 'end_hs', 'chrm_dnm', 'start_dnm', 'end_dnm', 'ref_dnm', 'alt_dnm', 'sample_id_dnm', 'family_id_dnm', 'class_dnm', 'type_dnm', 'mut_dnm', 'col14', 'intersection_hits'],  sep="\s+", index_col=False, low_memory = False)
+    mutations_in_range_new = mutations_in_range[mutations_in_range['intersection_hits'] != 0]
+    print("The total amount of mutations at the middle exon-centered sequences is " +
+          str(len(mutations_in_range_new.index)))
+    
+    # Saving the data
+    mutations_in_range_new.to_csv('results/intersection_dnm_' + name_hidden_state + '.tsv', sep="\t", header=True,
+                              index=False)
 ``` 
