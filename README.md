@@ -7,16 +7,6 @@ DFE of noncoding regions
 
 
 # Subsetting only YRU population
-```bash
-#!/bin/bash
-for i in /u/project/klohmuel/DataRepository/Human/Variants/VCF/*.vcf.gz; do 
-	filename="$(basename -- $i)"; 
-	filename2="Yoruba"$filename; 
-	echo $filename2;
-	echo $filename2;
-	qsub -v i=$i -v filename2=$filename2 01_subsampling_submission_new.sh; 
-done 
-```
 bash script 01_subsampling_submission_new.sh: 
 ``` bash
 #!/bin/bash
@@ -35,6 +25,17 @@ echo $i
 filename2=$filename2
 echo $filename2
 bcftools view -S /u/home/m/mica20/project-kirk-bigdata/noncoding_project/data/yoruba_names.txt $i --force-samples | bgzip -c > '/u/scratch/m/mica20/'$filename2
+```
+Submitting to the cluster (01_subsampling_new.sh):
+```bash
+#!/bin/bash
+for i in /u/project/klohmuel/DataRepository/Human/Variants/VCF/*.vcf.gz; do 
+	filename="$(basename -- $i)"; 
+	filename2="Yoruba"$filename; 
+	echo $filename2;
+	echo $filename2;
+	qsub -v i=$i -v filename2=$filename2 01_subsampling_submission_new.sh; 
+done 
 ```
 
 # Including SNPs only
