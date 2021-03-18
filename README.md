@@ -157,7 +157,10 @@ for i in sorted*; do closestBed -a $i -b sorted_subset_noncoding_only_quescient_
 
 # Filtering out duplicated positions
 ``` bash
-for i in closest_quescient_states_*; do sort -k1,1 -k2,2n -k3,3n -u $i > unique_$i; done
+for i in closest_quescient_states_*; do cut -f4-6 $i | sort -k1,1 -k2,2n -k3,3n -u > unique_$i; done
+
+# Keep only the 2 last columns (queiscent columns)
+for i in unique_*; do cut -f3,4 $i; done
 ```
 
 # Mutation rate
