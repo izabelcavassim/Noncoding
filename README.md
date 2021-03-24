@@ -105,6 +105,12 @@ java -Xmx8g -jar /u/home/m/mica20/project-kirk-bigdata/noncoding_project/softwar
 # zip the files
 bgzip ${vcf_out}
 ```
+# Combining all chrm VCF files
+``` bash
+#!/bin/bash
+
+```
+
 # Syn and Non-synonymous SNPs
 ``` bash
 #!/bin/bash
