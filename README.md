@@ -83,7 +83,16 @@ java -Djava.net.useSystemProxies=true ...
 #java -jar /u/home/m/mica20/project-kirk-bigdata/noncoding_project/software/snpEff/snpEff.jar download -v GRCh38.99
 
 # loop through chromosomes
-CHROM=${SGE_TASK_ID}
+# loop through chromosomes
+if [ $SGE_TASK_ID == 23 ]
+then
+        CHROM='X'
+elif [ $SGE_TASK_ID == 24 ]
+then
+        CHROM='Y'
+else
+        CHROM=${SGE_TASK_ID}
+fi 
 OUT_PREFIX='YRI_subset_n108_SNPs'
 
 vcf_in=${in_dir}/'YRI_subset_n108_SNPs_chr'${CHROM}'.recalibrated_variants.vcf.gz.recode.vcf' 
@@ -112,7 +121,15 @@ out_dir_nonsyn='/u/scratch/m/mica20/SNPs_only/Non_Syn_snps'
 java -Djava.net.useSystemProxies=true ...
 
 # loop through chromosomes
-CHROM=${SGE_TASK_ID}
+if [ $SGE_TASK_ID == 23 ]
+then
+        CHROM='X'
+elif [ $SGE_TASK_ID == 24 ]
+then
+        CHROM='Y'
+else
+        CHROM=${SGE_TASK_ID}
+fi 
 OUT_PREFIX='YRI_subset_n108_SNPs'
 
 vcf_in=${in_dir}/${OUT_PREFIX}'_chr'${CHROM}'.recalibrated_variants.SNPeff.vcf' 
