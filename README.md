@@ -186,6 +186,19 @@ for i in closest_quescient_states_*; do cut -f4-6 $i | sort -k1,1 -k2,2n -k3,3n 
 # Keep only the 2 last columns (queiscent columns)
 for i in unique_*; do cut -f3,4 $i; done
 ```
+# Splitting VCF file by hidden state
+``` bash
+out_dir_vcf_states='/u/home/m/mica20/project-kirk-bigdata/noncoding_project/data/Yoruba_1000/SNPs_HMM_states'
+
+# Now intersect
+for i in /u/home/m/mica20/project-kirk-bigdata/noncoding_project/data/States_data/unique_*.bed; do
+	echo $i
+	f=${i##*/}
+	echo $f
+	bedtools intersect -a "/u/scratch/m/mica20/SNPs_only/Non_Syn_snps/All_chrm_XY_YRI_subset_n108_SNPs.recalibrated_variants.SNPeff.vcf.gz" -b $i -header -wa > $out_dir_vcf_states"/${f}.Non.Syn.vcf"
+	bgzip $out_dir_vcf_states"/${f}.noncoding.vcf"
+done
+```
 
 # Mutation rate
 ``` python
